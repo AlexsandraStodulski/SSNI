@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSNI – Sistema Tour Inicial</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --red: #C0282A; --red-light: #FAEAEA; --red-dark: #8B1A1C;
+    --green: #2E7D32; --green-light: #E8F5E9; --green-mid: #43A047;
+    --blue: #1565C0; --blue-light: #E3F2FD;
+    --amber: #E65100; --amber-light: #FFF3E0;
+    --gray: #F5F5F5; --gray-2: #EEEEEE; --gray-3: #9E9E9E;
+    --text: #1A1A1A; --text-2: #555; --text-3: #888;
+    --white: #fff; --border: #E0E0E0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: #F0F2F5; color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--red-dark) 0%, var(--red) 60%, #E53935 100%);
+    color: white; padding: 0;
+    box-shadow: 0 4px 20px rgba(192,40,42,0.3);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px; border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 44px; height: 44px; background: rgba(255,255,255,0.2);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; letter-spacing: -1px;
+  }
+  .logo h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .logo p { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+  .header-stats { display: flex; gap: 20px; }
+  .hstat { text-align: center; }
+  .hstat-n { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .hstat-l { font-size: 10px; opacity: 0.75; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* NAV */
+  nav { display: flex; padding: 0 28px; gap: 4px; }
+  nav button {
+    background: none; border: none; color: rgba(255,255,255,0.7);
+    font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600;
+    padding: 10px 18px; cursor: pointer; border-radius: 8px 8px 0 0;
+    transition: all 0.2s; position: relative;
+  }
+  nav button:hover { color: white; background: rgba(255,255,255,0.1); }
+  nav button.active { color: white; background: rgba(255,255,255,0.15); }
+  nav button.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 3px; background: white; border-radius: 2px 2px 0 0;
+  }
+
+  /* MAIN */
+  main { max-width: 1400px; margin: 0 auto; padding: 28px; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS GRID */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat-card {
+    background: white; border-radius: var(--radius); padding: 18px 20px;
+    border-left: 4px solid var(--red); box-shadow: var(--shadow);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card.green { border-left-color: var(--green-mid); }
+  .stat-card.blue { border-left-color: var(--blue); }
+  .stat-card.amber { border-left-color: var(--amber); }
+  .stat-card.gray { border-left-color: var(--gray-3); }
+  .stat-n { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .stat-l { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+  .search-box {
+    flex: 1; min-width: 220px; padding: 10px 16px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Sora', sans-serif; font-size: 13px; background: white;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { outline: none; border-color: var(--red); }
+  select.filter-select {
+    padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Sora', sans-serif; font-size: 13px; background: white;
+    cursor: pointer;
+  }
+  .btn {
+    padding: 10px 18px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer; border: none;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--red); color: white; }
+  .btn-primary:hover { background: var(--red-dark); }
+  .btn-success { background: var(--green); color: white; }
+  .btn-success:hover { background: #1B5E20; }
+  .btn-info { background: var(--blue); color: white; }
+  .btn-info:hover { background: #0D47A1; }
+  .btn-ghost { background: white; color: var(--text-2); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { background: var(--gray); }
+  .btn-danger { background: #C62828; color: white; }
+  .btn-danger:hover { background: #8B0000; }
+  .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
+
+  /* TABLE */
+  .table-wrap { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: #1A1A1A; }
+  thead th { color: white; padding: 13px 14px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--gray-2); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #FAFAFA; }
+  tbody td { padding: 12px 14px; color: var(--text-2); vertical-align: middle; }
+  .td-name { font-weight: 600; color: var(--text); }
+
+  /* BADGES */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-gray { background: var(--gray-2); color: var(--text-3); }
+
+  /* CHECK GRID */
+  .check-grid { display: flex; gap: 4px; flex-wrap: wrap; }
+  .check-dot {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1.5px solid var(--border); background: white;
+    display: inline-block; transition: all 0.2s; cursor: pointer; flex-shrink: 0;
+  }
+  .check-dot.filled { background: var(--green-mid); border-color: var(--green-mid); }
+
+  /* PERFORMANCE BAR */
+  .perf-bar { width: 80px; height: 8px; background: var(--gray-2); border-radius: 4px; overflow: hidden; display: inline-block; }
+  .perf-fill { height: 100%; background: linear-gradient(90deg, var(--green-mid), #66BB6A); border-radius: 4px; transition: width 0.5s; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 14px; width: 100%; max-width: 760px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .modal-header {
+    background: linear-gradient(135deg, var(--red-dark), var(--red));
+    color: white; padding: 20px 28px; border-radius: 14px 14px 0 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 { font-size: 16px; font-weight: 700; }
+  .modal-close {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+    font-size: 16px; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-body { padding: 24px 28px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 12px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.6px; }
+  input[type=text], input[type=email], select.form-control, textarea {
+    padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 13px;
+    transition: border-color 0.2s; background: white;
+  }
+  input[type=text]:focus, input[type=email]:focus, select.form-control:focus, textarea:focus {
+    outline: none; border-color: var(--red);
+  }
+  .form-section { margin: 20px 0 10px; font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--gray-2); padding-bottom: 6px; }
+  .competencias-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 10px 0; }
+  .comp-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--gray); border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+  .comp-item:hover { background: var(--gray-2); }
+  .comp-item input[type=checkbox] { display: none; }
+  .comp-toggle { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .comp-item.checked .comp-toggle { background: var(--green-mid); border-color: var(--green-mid); }
+  .comp-item.checked .comp-toggle::after { content: '✓'; color: white; font-size: 11px; font-weight: 700; }
+  .comp-label { font-size: 12px; font-weight: 500; color: var(--text); }
+  .modal-footer { padding: 16px 28px; background: var(--gray); border-top: 1px solid var(--border); border-radius: 0 0 14px 14px; display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* FICHA MODAL */
+  .ficha-section { margin-bottom: 20px; }
+  .ficha-section h4 { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ficha-item label { font-size: 11px; color: var(--text-3); }
+  .ficha-item p { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 2px; }
+  .comp-chip { display: inline-block; padding: 4px 10px; background: var(--green-light); color: var(--green); border-radius: 20px; font-size: 11px; font-weight: 600; margin: 3px; }
+  .comp-chip.empty { background: var(--gray-2); color: var(--text-3); }
+
+  /* CHARTS */
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 24px; }
+  .chart-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .chart-title span { width: 4px; height: 16px; background: var(--red); border-radius: 2px; display: inline-block; }
+  .chart-wrap { position: relative; height: 240px; }
+
+  /* GRUPOS */
+  .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .grupo-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border-top: 4px solid var(--green); }
+  .grupo-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+  .grupo-member { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--gray-2); }
+  .grupo-member:last-child { border-bottom: none; }
+  .avatar { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
+  .grupo-member-info p { font-size: 13px; font-weight: 600; color: var(--text); }
+  .grupo-member-info span { font-size: 11px; color: var(--text-3); }
+
+  /* DESEMPENHO */
+  .desemp-table table td { padding: 10px 14px; }
+  .perf-full { width: 120px; height: 10px; background: var(--gray-2); border-radius: 5px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .perf-full .perf-fill { height: 100%; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 28px; right: 28px; background: #1A1A1A; color: white; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--red); }
+
+  /* CONFIRM MODAL */
+  .confirm-modal { max-width: 400px; }
+  .confirm-body { padding: 28px; text-align: center; }
+  .confirm-icon { font-size: 44px; margin-bottom: 14px; }
+  .confirm-body h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-body p { font-size: 13px; color: var(--text-2); }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; gap: 6px; margin-top: 16px; justify-content: center; }
+  .pag-btn { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; background: white; cursor: pointer; font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 600; transition: all 0.15s; }
+  .pag-btn:hover { background: var(--gray); }
+  .pag-btn.active { background: var(--red); color: white; border-color: var(--red); }
+  .pag-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-3); }
+  .empty-state h3 { font-size: 16px; color: var(--text-2); margin-bottom: 8px; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .section-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+  @media (max-width: 700px) {
+    main { padding: 14px; }
+    .header-top { padding: 12px 16px; }
+    nav { padding: 0 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .ficha-grid { grid-template-columns: 1fr; }
+    .header-stats { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">SS</div>
+      <div>
+        <h1>SSNI – Tour Inicial</h1>
+        <p>Sistema de Acompanhamento de Treinamento</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-n" id="h-total">0</div><div class="hstat-l">Cadastrados</div></div>
+      <div class="hstat"><div class="hstat-n" id="h-concluidos">0</div><div class="hstat-l">Concluídos</div></div>
+      <div class="hstat"><div class="hstat-n" id="h-ativos">0</div><div class="hstat-l">Ativos</div></div>
+    </div>
+  </div>
+  <nav>
+    <button class="active" onclick="showPage('cadastros')">👥 Cadastros</button>
+    <button onclick="showPage('desempenho')">📊 Desempenho</button>
+    <button onclick="showPage('graficos')">📈 Gráficos</button>
+    <button onclick="showPage('grupos')">🏢 Grupos do Tour</button>
+  </nav>
+</header>
+
+<main>
+  <!-- CADASTROS PAGE -->
+  <div class="page active" id="page-cadastros">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Participantes do Tour</div>
+        <div class="section-sub">Gerenciamento de cadastros do Tour Inicial SSNI</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal()">+ Novo Cadastro</button>
+    </div>
+    <div class="stats-grid" id="stats-cards"></div>
+    <div class="toolbar">
+      <input class="search-box" type="text" placeholder="🔍 Buscar por nome, estado, formação..." id="search-input" oninput="renderTable()">
+      <select class="filter-select" id="filter-status" onchange="renderTable()">
+        <option value="">Todos os Status</option>
+        <option>Ativo</option>
+        <option>Tour Concluído</option>
+        <option>Saiu do Elo</option>
+        <option>Desistiu</option>
+        <option>Parado</option>
+        <option>Novo cargo</option>
+        <option>Intermitente</option>
+        <option>Licença</option>
+      </select>
+      <select class="filter-select" id="filter-estado" onchange="renderTable()">
+        <option value="">Todos os Estados</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Estado</th>
+            <th>Formação</th>
+            <th>Nome</th>
+            <th>Status</th>
+            <th>Competências</th>
+            <th>Desempenho</th>
+            <th>Cargo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <!-- DESEMPENHO PAGE -->
+  <div class="page" id="page-desempenho">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Controle de Desempenho</div>
+        <div class="section-sub">Acompanhamento detalhado das competências de cada participante</div>
+      </div>
+    </div>
+    <div class="table-wrap desemp-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Estado</th>
+            <th>Status</th>
+            <th>Comunicação</th>
+            <th>Engajamento</th>
+            <th>Conhecimento</th>
+            <th>Liderança</th>
+            <th>Trab. Equipe</th>
+            <th>Conexão</th>
+            <th>Dom. Ferramentas</th>
+            <th>% Geral</th>
+            <th>Cargo</th>
+          </tr>
+        </thead>
+        <tbody id="desemp-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS PAGE -->
+  <div class="page" id="page-graficos">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Análise e Gráficos</div>
+        <div class="section-sub">Visão estatística dos dados do Tour Inicial</div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title"><span></span>Distribuição por Status</div>
+        <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span></span>Participantes por Estado</div>
+        <div class="chart-wrap"><canvas id="chart-estados"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span></span>Nível das Competências (Média Geral)</div>
+        <div class="chart-wrap"><canvas id="chart-comp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span></span>Desempenho por Participante (Top 10)</div>
+        <div class="chart-wrap"><canvas id="chart-desemp"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRUPOS PAGE -->
+  <div class="page" id="page-grupos">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Grupos do Tour</div>
+        <div class="section-sub">Organização por grupos de atuação</div>
+      </div>
+    </div>
+    <div class="grupos-grid" id="grupos-content"></div>
+  </div>
+</main>
+
+<!-- MODAL CADASTRO -->
+<div class="modal-overlay" id="modal-cadastro">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Novo Cadastro</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Estado (UF)</label>
+          <select class="form-control" id="f-estado">
+            <option value="">Selecione</option>
+            <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
+            <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
+            <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
+            <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
+            <option>SE</option><option>SP</option><option>TO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="f-status">
+            <option>Ativo</option>
+            <option>Tour Concluído</option>
+            <option>Saiu do Elo</option>
+            <option>Desistiu</option>
+            <option>Parado</option>
+            <option>Novo cargo</option>
+            <option>Intermitente</option>
+            <option>Licença</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Nome Completo</label>
+          <input type="text" id="f-nome" placeholder="Nome completo do participante">
+        </div>
+        <div class="form-group full">
+          <label>Formação</label>
+          <input type="text" id="f-formacao" placeholder="Ex: Direito – Advogado, Administração, Psicologia...">
+        </div>
+        <div class="form-group full">
+          <label>Cargo (se houver)</label>
+          <input type="text" id="f-cargo" placeholder="Ex: Assessora - Sec. de Implantação">
+        </div>
+      </div>
+
+      <div class="form-section">Grupos do Tour</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label><input type="checkbox" id="f-gabinete"> Gabinete Presidente</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="f-assessorias"> Assessorias dos Gabinetes</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="f-lc-lideres"> LC Líderes Coord. Estaduais</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="f-secretarios"> Secretários</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="f-cni"> CNI Líderes Coord. Implantação</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="f-tem-cargo"> Tem Cargo</label>
+        </div>
+      </div>
+
+      <div class="form-section">Competências Avaliadas</div>
+      <div class="competencias-grid" id="comp-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCadastro()">Salvar Cadastro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FICHA -->
+<div class="modal-overlay" id="modal-ficha">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="ficha-nome">Ficha do Participante</h2>
+      <button class="modal-close" onclick="closeFicha()">✕</button>
+    </div>
+    <div class="modal-body" id="ficha-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFicha()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal confirm-modal">
+    <div class="modal-header">
+      <h2>Confirmar Exclusão</h2>
+      <button class="modal-close" onclick="closeConfirm()">✕</button>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-icon">🗑️</div>
+      <h3>Excluir cadastro?</h3>
+      <p id="confirm-name" style="margin-top:8px;font-weight:600;"></p>
+      <p style="margin-top:6px;">Esta ação não pode ser desfeita.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COMPETENCIAS = ['Comunicação','Engajamento','Conhecimento','Liderança','Trabalho em Equipe','Conexão','Domínio Ferramentas Tecnológicas'];
+const AVATAR_COLORS = ['#C0282A','#1565C0','#2E7D32','#6A1B9A','#E65100','#00838F','#283593'];
+const STATUS_BADGE = {
+  'Ativo':'badge-green','Tour Concluído':'badge-blue','Saiu do Elo':'badge-red',
+  'Desistiu':'badge-red','Parado':'badge-gray','Novo cargo':'badge-amber',
+  'Intermitente':'badge-amber','Licença':'badge-gray'
+};
+
+let dados = JSON.parse(localStorage.getItem('ssni_dados') || '[]');
+let editId = null;
+let deleteId = null;
+let currentPage = 1;
+const PER_PAGE = 15;
+
+let charts = {};
+
+// SEED DATA
+if (!dados.length) {
+  const seed = [
+    {id:1,estado:'RO',formacao:'Assistente Social',nome:'Patrícia Mamede',status:'Saiu do Elo',cargo:'',comp:{comunicacao:1,engajamento:0,conhecimento:1,lideranca:0,equipe:1,conexao:0,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:2,estado:'DF',formacao:'Direito – Advogado',nome:'Edna',status:'Ativo',cargo:'',comp:{comunicacao:0,engajamento:1,conhecimento:1,lideranca:0,equipe:0,conexao:1,ferramentas:1},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:3,estado:'RO',formacao:'Direito – Bacharel',nome:'Marinete',status:'Saiu do Elo',cargo:'',comp:{comunicacao:1,engajamento:1,conhecimento:0,lideranca:1,equipe:0,conexao:0,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:4,estado:'RO',formacao:'Área da Saúde',nome:'Marcelo',status:'Ativo',cargo:'',comp:{comunicacao:0,engajamento:0,conhecimento:1,lideranca:1,equipe:1,conexao:1,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:5,estado:'SP',formacao:'Assistente Social',nome:'Fabiana Machado',status:'Ativo',cargo:'',comp:{comunicacao:1,engajamento:1,conhecimento:1,lideranca:0,equipe:1,conexao:0,ferramentas:1},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:6,estado:'PA',formacao:'Área da Educação',nome:'Carlos Castilho Costa',status:'Tour Concluído',cargo:'',comp:{comunicacao:1,engajamento:1,conhecimento:1,lideranca:1,equipe:1,conexao:1,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:7,estado:'DF',formacao:'Psicóloga (O)',nome:'Daniel Pereira',status:'Tour Concluído',cargo:'',comp:{comunicacao:0,engajamento:1,conhecimento:1,lideranca:1,equipe:0,conexao:1,ferramentas:1},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:8,estado:'RO',formacao:'Administração',nome:'Wallace Celestino (FLY)',status:'Novo cargo',cargo:'',comp:{comunicacao:1,engajamento:0,conhecimento:0,lideranca:1,equipe:1,conexao:0,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:9,estado:'DF',formacao:'Contabilidade',nome:'Marluce',status:'Tour Concluído',cargo:'Assessora - Sec. de Implantação',comp:{comunicacao:1,engajamento:1,conhecimento:1,lideranca:0,equipe:1,conexao:1,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:1},
+    {id:10,estado:'AC',formacao:'Informática',nome:'Osmar',status:'Tour Concluído',cargo:'',comp:{comunicacao:0,engajamento:1,conhecimento:1,lideranca:1,equipe:1,conexao:1,ferramentas:1},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:11,estado:'RO',formacao:'Bacharel/Licenciatura',nome:'Carlos Henrique',status:'Desistiu',cargo:'',comp:{comunicacao:0,engajamento:0,conhecimento:0,lideranca:0,equipe:0,conexao:0,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:12,estado:'RO',formacao:'Tecnólogo Completo',nome:'Ana Raquel',status:'Parado',cargo:'Secretária - Sec. de Ouvidoria',comp:{comunicacao:1,engajamento:0,conhecimento:1,lideranca:0,equipe:0,conexao:1,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:1},
+    {id:13,estado:'RO',formacao:'Técnico Completo',nome:'Wirley Soares',status:'Tour Concluído',cargo:'',comp:{comunicacao:1,engajamento:1,conhecimento:1,lideranca:1,equipe:0,conexao:1,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:14,estado:'RO',formacao:'Ens. Médio Completo',nome:'Adalton Albuquerque',status:'Intermitente',cargo:'',comp:{comunicacao:0,engajamento:1,conhecimento:0,lideranca:0,equipe:1,conexao:0,ferramentas:1},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:15,estado:'PA',formacao:'Ens. Fundamental Completo',nome:'Jéssica Correa Souza',status:'Licença',cargo:'',comp:{comunicacao:0,engajamento:0,conhecimento:1,lideranca:0,equipe:0,conexao:1,ferramentas:0},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+    {id:16,estado:'RO',formacao:'Cursando Bacharelado',nome:'Janaína Costa',status:'Tour Concluído',cargo:'',comp:{comunicacao:1,engajamento:1,conhecimento:1,lideranca:1,equipe:1,conexao:1,ferramentas:1},gabinete:0,assessorias:0,lc_lideres:0,secretarios:0,cni:0,tem_cargo:0},
+  ];
+  dados = seed;
+  save();
+}
+
+function save() { localStorage.setItem('ssni_dados', JSON.stringify(dados)); }
+
+function getFiltered() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const st = document.getElementById('filter-status').value;
+  const es = document.getElementById('filter-estado').value;
+  return dados.filter(d => {
+    if (q && !d.nome.toLowerCase().includes(q) && !d.estado.toLowerCase().includes(q) && !d.formacao.toLowerCase().includes(q)) return false;
+    if (st && d.status !== st) return false;
+    if (es && d.estado !== es) return false;
+    return true;
+  });
+}
+
+function perf(d) {
+  const vals = Object.values(d.comp);
+  return Math.round((vals.filter(v=>v).length / vals.length) * 100);
+}
+
+function avatarColor(name) {
+  let h = 0;
+  for (let c of name) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[h];
+}
+
+function initials(name) {
+  const parts = name.trim().split(' ');
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+function updateHeaderStats() {
+  document.getElementById('h-total').textContent = dados.length;
+  document.getElementById('h-concluidos').textContent = dados.filter(d=>d.status==='Tour Concluído').length;
+  document.getElementById('h-ativos').textContent = dados.filter(d=>d.status==='Ativo').length;
+}
+
+function updateStatsCards() {
+  const total = dados.length;
+  const concluidos = dados.filter(d=>d.status==='Tour Concluído').length;
+  const ativos = dados.filter(d=>d.status==='Ativo').length;
+  const desistiu = dados.filter(d=>d.status==='Desistiu'||d.status==='Saiu do Elo').length;
+  const temCargo = dados.filter(d=>d.tem_cargo).length;
+  const avgPerf = total ? Math.round(dados.reduce((a,d)=>a+perf(d),0)/total) : 0;
+
+  document.getElementById('stats-cards').innerHTML = `
+    <div class="stat-card"><div class="stat-n">${total}</div><div class="stat-l">Total Cadastrados</div></div>
+    <div class="stat-card green"><div class="stat-n">${concluidos}</div><div class="stat-l">Tour Concluído</div></div>
+    <div class="stat-card blue"><div class="stat-n">${ativos}</div><div class="stat-l">Ativos</div></div>
+    <div class="stat-card amber"><div class="stat-n">${desistiu}</div><div class="stat-l">Saíram/Desistiram</div></div>
+    <div class="stat-card"><div class="stat-n">${temCargo}</div><div class="stat-l">Com Cargo</div></div>
+    <div class="stat-card green"><div class="stat-n">${avgPerf}%</div><div class="stat-l">Desempenho Médio</div></div>
+  `;
+}
+
+function renderTable() {
+  currentPage = 1;
+  updateTable();
+}
+
+function updateTable() {
+  const filtered = getFiltered();
+  const total = filtered.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const start = (currentPage-1)*PER_PAGE;
+  const slice = filtered.slice(start, start+PER_PAGE);
+
+  const tbody = document.getElementById('table-body');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><h3>Nenhum participante encontrado</h3><p>Tente ajustar os filtros ou adicione novos cadastros.</p></div></td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map((d,i) => {
+      const p = perf(d);
+      const bclass = STATUS_BADGE[d.status] || 'badge-gray';
+      const compDots = COMPETENCIAS.map((_,ci) => {
+        const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+        return `<div class="check-dot ${d.comp[keys[ci]]?'filled':''}" title="${COMPETENCIAS[ci]}"></div>`;
+      }).join('');
+      const color = avatarColor(d.nome);
+      return `<tr>
+        <td style="color:var(--text-3);font-size:11px;font-family:monospace">${start+i+1}</td>
+        <td><span class="badge badge-gray">${d.estado}</span></td>
+        <td style="font-size:11px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.formacao}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="avatar" style="background:${color};width:28px;height:28px;font-size:10px">${initials(d.nome)}</div>
+            <span class="td-name">${d.nome}</span>
+          </div>
+        </td>
+        <td><span class="badge ${bclass}">${d.status}</span></td>
+        <td><div class="check-grid">${compDots}</div></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="perf-bar"><div class="perf-fill" style="width:${p}%"></div></div>
+            <span style="font-size:11px;font-family:monospace;font-weight:600">${p}%</span>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--text-3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.cargo||'—'}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-sm" onclick="verFicha(${d.id})" title="Ver Ficha">📋</button>
+            <button class="btn btn-info btn-sm" onclick="editarCadastro(${d.id})" title="Editar">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deletar(${d.id},'${d.nome.replace(/'/g,"\\'")}')">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Pagination
+  const pag = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML=''; return; }
+  let html = `<button class="pag-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let i=1;i<=pages;i++) html += `<button class="pag-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  html += `<button class="pag-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>`;
+  pag.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; updateTable(); }
+
+function updateEstadoFilter() {
+  const estados = [...new Set(dados.map(d=>d.estado))].sort();
+  const sel = document.getElementById('filter-estado');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos os Estados</option>' + estados.map(e=>`<option ${e===cur?'selected':''}>${e}</option>`).join('');
+}
+
+// MODAL
+function buildCompGrid() {
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  document.getElementById('comp-grid').innerHTML = COMPETENCIAS.map((c,i)=>`
+    <label class="comp-item" id="comp-${keys[i]}-label" onclick="toggleComp('${keys[i]}')">
+      <div class="comp-toggle" id="comp-${keys[i]}-toggle"></div>
+      <span class="comp-label">${c}</span>
+    </label>
+  `).join('');
+}
+
+function toggleComp(key) {
+  const label = document.getElementById(`comp-${key}-label`);
+  label.classList.toggle('checked');
+}
+
+function getCompValues() {
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  const obj = {};
+  keys.forEach(k => obj[k] = document.getElementById(`comp-${k}-label`).classList.contains('checked') ? 1 : 0);
+  return obj;
+}
+
+function setCompValues(comp) {
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  keys.forEach(k => {
+    const label = document.getElementById(`comp-${k}-label`);
+    if (comp[k]) label.classList.add('checked'); else label.classList.remove('checked');
+  });
+}
+
+function openModal(id=null) {
+  editId = id;
+  buildCompGrid();
+  document.getElementById('modal-title').textContent = id ? 'Editar Cadastro' : 'Novo Cadastro';
+  if (id) {
+    const d = dados.find(x=>x.id===id);
+    document.getElementById('f-estado').value = d.estado;
+    document.getElementById('f-nome').value = d.nome;
+    document.getElementById('f-formacao').value = d.formacao;
+    document.getElementById('f-status').value = d.status;
+    document.getElementById('f-cargo').value = d.cargo;
+    document.getElementById('f-gabinete').checked = !!d.gabinete;
+    document.getElementById('f-assessorias').checked = !!d.assessorias;
+    document.getElementById('f-lc-lideres').checked = !!d.lc_lideres;
+    document.getElementById('f-secretarios').checked = !!d.secretarios;
+    document.getElementById('f-cni').checked = !!d.cni;
+    document.getElementById('f-tem-cargo').checked = !!d.tem_cargo;
+    setCompValues(d.comp);
+  } else {
+    document.getElementById('f-estado').value = '';
+    document.getElementById('f-nome').value = '';
+    document.getElementById('f-formacao').value = '';
+    document.getElementById('f-status').value = 'Ativo';
+    document.getElementById('f-cargo').value = '';
+    ['f-gabinete','f-assessorias','f-lc-lideres','f-secretarios','f-cni','f-tem-cargo'].forEach(id=>document.getElementById(id).checked=false);
+  }
+  document.getElementById('modal-cadastro').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal-cadastro').classList.remove('open'); editId=null; }
+function editarCadastro(id) { openModal(id); }
+
+function salvarCadastro() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const estado = document.getElementById('f-estado').value;
+  if (!nome) { showToast('Informe o nome completo','error'); return; }
+  if (!estado) { showToast('Selecione o estado','error'); return; }
+
+  const entry = {
+    id: editId || Date.now(),
+    estado, nome,
+    formacao: document.getElementById('f-formacao').value.trim(),
+    status: document.getElementById('f-status').value,
+    cargo: document.getElementById('f-cargo').value.trim(),
+    comp: getCompValues(),
+    gabinete: document.getElementById('f-gabinete').checked?1:0,
+    assessorias: document.getElementById('f-assessorias').checked?1:0,
+    lc_lideres: document.getElementById('f-lc-lideres').checked?1:0,
+    secretarios: document.getElementById('f-secretarios').checked?1:0,
+    cni: document.getElementById('f-cni').checked?1:0,
+    tem_cargo: document.getElementById('f-tem-cargo').checked?1:0,
+  };
+
+  if (editId) {
+    const idx = dados.findIndex(d=>d.id===editId);
+    dados[idx] = entry;
+    showToast('Cadastro atualizado com sucesso!', 'success');
+  } else {
+    dados.push(entry);
+    showToast('Cadastro salvo com sucesso!', 'success');
+  }
+
+  save(); closeModal(); refresh();
+}
+
+// FICHA
+function verFicha(id) {
+  const d = dados.find(x=>x.id===id);
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  const p = perf(d);
+  const color = avatarColor(d.nome);
+
+  const compChips = keys.map((k,i) => `<span class="comp-chip ${d.comp[k]?'':'empty'}">${d.comp[k]?'✓':'○'} ${COMPETENCIAS[i]}</span>`).join('');
+
+  const grupos = [];
+  if (d.gabinete) grupos.push('Gabinete Presidente');
+  if (d.assessorias) grupos.push('Assessorias dos Gabinetes');
+  if (d.lc_lideres) grupos.push('LC Líderes Coord. Estaduais');
+  if (d.secretarios) grupos.push('Secretários');
+  if (d.cni) grupos.push('CNI Líderes Coord. Implantação');
+
+  document.getElementById('ficha-nome').textContent = d.nome;
+  document.getElementById('ficha-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px;background:var(--gray);border-radius:10px">
+      <div class="avatar" style="background:${color};width:56px;height:56px;font-size:18px">${initials(d.nome)}</div>
+      <div>
+        <p style="font-size:18px;font-weight:700">${d.nome}</p>
+        <p style="font-size:13px;color:var(--text-2)">${d.formacao} • ${d.estado}</p>
+        <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+          <span class="badge ${STATUS_BADGE[d.status]||'badge-gray'}">${d.status}</span>
+          <span style="font-size:12px;color:var(--text-3)">Desempenho:</span>
+          <span style="font-size:13px;font-weight:700;font-family:monospace">${p}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ficha-section">
+      <h4>Informações Gerais</h4>
+      <div class="ficha-grid">
+        <div class="ficha-item"><label>Estado</label><p>${d.estado}</p></div>
+        <div class="ficha-item"><label>Status</label><p>${d.status}</p></div>
+        <div class="ficha-item"><label>Formação</label><p>${d.formacao||'—'}</p></div>
+        <div class="ficha-item"><label>Cargo</label><p>${d.cargo||'—'}</p></div>
+        <div class="ficha-item"><label>Tem Cargo</label><p>${d.tem_cargo?'Sim':'Não'}</p></div>
+      </div>
+    </div>
+
+    <div class="ficha-section">
+      <h4>Competências</h4>
+      <div>${compChips}</div>
+    </div>
+
+    <div class="ficha-section">
+      <h4>Grupos do Tour</h4>
+      <div>${grupos.length ? grupos.map(g=>`<span class="comp-chip">${g}</span>`).join('') : '<span class="comp-chip empty">Nenhum grupo selecionado</span>'}</div>
+    </div>
+
+    <div class="ficha-section">
+      <h4>Desempenho Geral</h4>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex:1;height:14px;background:var(--gray-2);border-radius:7px;overflow:hidden">
+          <div style="width:${p}%;height:100%;background:linear-gradient(90deg,#2E7D32,#66BB6A);border-radius:7px;transition:width 0.5s"></div>
+        </div>
+        <span style="font-size:16px;font-weight:700;font-family:monospace">${p}%</span>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-ficha').classList.add('open');
+}
+function closeFicha() { document.getElementById('modal-ficha').classList.remove('open'); }
+
+// DELETE
+function deletar(id, nome) {
+  deleteId = id;
+  document.getElementById('confirm-name').textContent = nome;
+  document.getElementById('modal-confirm').classList.add('open');
+}
+function closeConfirm() { document.getElementById('modal-confirm').classList.remove('open'); deleteId=null; }
+function confirmarDelete() {
+  dados = dados.filter(d=>d.id!==deleteId);
+  save(); closeConfirm();
+  showToast('Cadastro excluído.','error');
+  refresh();
+}
+
+// DESEMPENHO
+function renderDesempenho() {
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  const tbody = document.getElementById('desemp-body');
+  if (!dados.length) { tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><h3>Nenhum dado</h3></div></td></tr>`; return; }
+  tbody.innerHTML = dados.map(d => {
+    const p = perf(d);
+    const bclass = STATUS_BADGE[d.status]||'badge-gray';
+    const dots = keys.map(k=>`<div class="check-dot ${d.comp[k]?'filled':''}" style="pointer-events:none"></div>`).join('');
+    const barColor = p>=70?'#2E7D32':p>=40?'#E65100':'#C0282A';
+    return `<tr>
+      <td class="td-name">${d.nome}</td>
+      <td><span class="badge badge-gray">${d.estado}</span></td>
+      <td><span class="badge ${bclass}">${d.status}</span></td>
+      ${keys.map(k=>`<td style="text-align:center"><div class="check-dot ${d.comp[k]?'filled':''}" style="pointer-events:none;margin:auto"></div></td>`).join('')}
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="perf-full"><div class="perf-fill" style="width:${p}%;background:${barColor}"></div></div>
+          <span style="font-size:12px;font-weight:700;font-family:monospace;color:${barColor}">${p}%</span>
+        </div>
+      </td>
+      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.cargo||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// GRÁFICOS
+function renderGraficos() {
+  // Status
+  const statusCounts = {};
+  dados.forEach(d=>{ statusCounts[d.status]=(statusCounts[d.status]||0)+1; });
+  destroyChart('chart-status');
+  charts['chart-status'] = new Chart(document.getElementById('chart-status'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(statusCounts),
+      datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#43A047','#1565C0','#C0282A','#FF7043','#9E9E9E','#E65100','#8D6E63','#26A69A'] }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:12, padding:8 } } } }
+  });
+
+  // Estados
+  const estadoCounts = {};
+  dados.forEach(d=>{ estadoCounts[d.estado]=(estadoCounts[d.estado]||0)+1; });
+  const sortedE = Object.entries(estadoCounts).sort((a,b)=>b[1]-a[1]);
+  destroyChart('chart-estados');
+  charts['chart-estados'] = new Chart(document.getElementById('chart-estados'), {
+    type: 'bar',
+    data: {
+      labels: sortedE.map(e=>e[0]),
+      datasets: [{ label:'Participantes', data: sortedE.map(e=>e[1]), backgroundColor:'#C0282A', borderRadius:4 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } }
+  });
+
+  // Competências média
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  const avgs = keys.map(k => dados.length ? Math.round((dados.reduce((a,d)=>a+(d.comp[k]||0),0)/dados.length)*100) : 0);
+  destroyChart('chart-comp');
+  charts['chart-comp'] = new Chart(document.getElementById('chart-comp'), {
+    type: 'radar',
+    data: {
+      labels: ['Comunicação','Engajamento','Conhecimento','Liderança','Trab. Equipe','Conexão','Dom. Ferramentas'],
+      datasets: [{ label:'% Alcançado', data: avgs, backgroundColor:'rgba(192,40,42,0.15)', borderColor:'#C0282A', pointBackgroundColor:'#C0282A', borderWidth:2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ min:0, max:100, ticks:{ stepSize:20, font:{size:10} } } }, plugins:{ legend:{ display:false } } }
+  });
+
+  // Top desempenho
+  const sorted = [...dados].sort((a,b)=>perf(b)-perf(a)).slice(0,10);
+  destroyChart('chart-desemp');
+  charts['chart-desemp'] = new Chart(document.getElementById('chart-desemp'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(d=>d.nome.split(' ')[0]),
+      datasets: [{ label:'Desempenho %', data: sorted.map(d=>perf(d)), backgroundColor: sorted.map(d=>perf(d)>=70?'#43A047':perf(d)>=40?'#E65100':'#C0282A'), borderRadius:4 }]
+    },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ min:0, max:100, ticks:{ callback:v=>v+'%' } } } }
+  });
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// GRUPOS
+function renderGrupos() {
+  const grupos = [
+    { key:'gabinete', label:'Gabinete Presidente', color:'#C0282A' },
+    { key:'assessorias', label:'Assessorias dos Gabinetes', color:'#1565C0' },
+    { key:'lc_lideres', label:'LC Líderes Coord. Estaduais', color:'#2E7D32' },
+    { key:'secretarios', label:'Secretários', color:'#6A1B9A' },
+    { key:'cni', label:'CNI Líderes Coord. Implantação', color:'#E65100' },
+  ];
+  const container = document.getElementById('grupos-content');
+  container.innerHTML = grupos.map(g => {
+    const members = dados.filter(d=>d[g.key]);
+    const membersHTML = members.length
+      ? members.map(d=>{
+          const color = avatarColor(d.nome);
+          return `<div class="grupo-member">
+            <div class="avatar" style="background:${color}">${initials(d.nome)}</div>
+            <div class="grupo-member-info">
+              <p>${d.nome}</p>
+              <span>${d.estado} • ${d.status}</span>
+            </div>
+          </div>`;
+        }).join('')
+      : `<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">Nenhum participante neste grupo</div>`;
+
+    return `<div class="grupo-card" style="border-top-color:${g.color}">
+      <div class="grupo-title" style="color:${g.color}">${g.label} <span style="font-size:11px;background:${g.color}22;padding:2px 8px;border-radius:20px;margin-left:6px">${members.length}</span></div>
+      ${membersHTML}
+    </div>`;
+  }).join('');
+}
+
+// EXPORT CSV
+function exportCSV() {
+  const keys = ['comunicacao','engajamento','conhecimento','lideranca','equipe','conexao','ferramentas'];
+  const headers = ['ID','Estado','Nome','Formação','Status','Cargo',
+    'Comunicação','Engajamento','Conhecimento','Liderança','Trab.Equipe','Conexão','Dom.Ferramentas','Desempenho%',
+    'Gabinete','Assessorias','LC Líderes','Secretários','CNI','Tem Cargo'];
+  const rows = dados.map(d=>[
+    d.id, d.estado, d.nome, d.formacao, d.status, d.cargo,
+    ...keys.map(k=>d.comp[k]?'Sim':'Não'),
+    perf(d)+'%',
+    d.gabinete?'Sim':'Não', d.assessorias?'Sim':'Não', d.lc_lideres?'Sim':'Não',
+    d.secretarios?'Sim':'Não', d.cni?'Sim':'Não', d.tem_cargo?'Sim':'Não'
+  ]);
+  const csv = [headers, ...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='SSNI_Tour.csv'; a.click();
+  showToast('CSV exportado com sucesso!','success');
+}
+
+// PAGE NAV
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (page==='graficos') setTimeout(renderGraficos,100);
+  if (page==='grupos') renderGrupos();
+  if (page==='desempenho') renderDesempenho();
+}
+
+// TOAST
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show '+type;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// MAIN REFRESH
+function refresh() {
+  updateHeaderStats();
+  updateStatsCards();
+  updateEstadoFilter();
+  updateTable();
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+refresh();
+</script>
+</body>
+</html>
